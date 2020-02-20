@@ -42,6 +42,8 @@ Run these commands for Docker:
 
    docker run -it --rm work_sample:v1 bash
 
+   docker run -it --rm -v ${PWD}/new_output:/usr/src/work/Output work_sample:v1
+
 *****************
 Release History
 *****************
