@@ -215,35 +215,35 @@ for ind in range(len(POI_ids)):
     df_per_POI = df[df['Poi_Id'] == ind]
     data_POI_dists_degree = np.array(df_per_POI['POI_min_dist_degrees'])
     # Two stage outlier removal
+    # Step 1: removing the extreme outliers using quantiles
+
     # find all the rows that have this POI id
     data_POI_dists = np.array(df_per_POI['POI_min_dist'])
-    # Step 1: removing the extreme outliers using quantiles
     q1 = np.quantile(sorted(data_POI_dists), 0.25)
     q3 = np.quantile(sorted(data_POI_dists), 0.75)
     IQR = q3 - q1
-    upper_dist = q3 + iqr_thresh_extreme * IQR
-    # first refinement
-    df_per_POI = df_per_POI[df_per_POI['POI_min_dist'] < upper_dist]
+    upper_dist_extreme = q3 + iqr_thresh_extreme * IQR
+    df_per_POI = df_per_POI[df_per_POI['POI_min_dist'] < upper_dist_extreme]
+    data_POI_dists = np.array(df_per_POI['POI_min_dist'])
+    # Step 2 : removing the outliers from the remaining data :
 
-    median_val = np.median(df_per_POI['POI_min_dist'])
-    mean_val = np.mean(df_per_POI['POI_min_dist'])
-    std_val = np.std(df_per_POI['POI_min_dist'])
-    std_val_med = std_median(df_per_POI['POI_min_dist'], median_val)
-    # Step 2 : removing the outliers from the remaining data using quantiles
-    # or  mean+ constant * std
-    q1 = np.quantile(sorted(data_POI_dists), 0.25)
-    q3 = np.quantile(sorted(data_POI_dists), 0.75)
-    IQR = q3 - q1
-    upper_dist_iqr = q3 + iqr_thresh * IQR
-    # if Gaussian assumption
-    upper_dist_Gaussian_mean = mean_val+std_thresh*std_val
-    upper_dist_Gaussian_med = median_val+std_thresh*std_val_med
-    # Second refinement : three ways, mean, median or IQR
-    df_per_POI = df_per_POI[df_per_POI['POI_min_dist'] < upper_dist_iqr]
-    # df_per_POI= df_per_POI[df_per_POI['POI_min_dist']
-    # < upper_dist_Gaussian_mean]
-    # df_per_POI= df_per_POI[df_per_POI['POI_min_dist']
-    # < upper_dist_Gaussian_med]
+    # using quantiles | mean+ constant * std | med+ constant * std_med
+    if outlier_removal_method['qantile']:  # quantile setting
+        q1 = np.quantile(sorted(data_POI_dists), 0.25)
+        q3 = np.quantile(sorted(data_POI_dists), 0.75)
+        IQR = q3 - q1
+        upper_dist = q3 + iqr_thresh * IQR
+    elif outlier_removal_method['mean_std']:  # Gaussian mean setting
+        mean_val = np.mean(df_per_POI['POI_min_dist'])
+        std_val = np.std(df_per_POI['POI_min_dist'])
+        upper_dist = mean_val + std_thresh * std_val
+    else:  # Gaussian median setting
+        median_val = np.median(df_per_POI['POI_min_dist'])
+        std_val_med = std_median(df_per_POI['POI_min_dist'], median_val)
+        upper_dist = median_val + std_thresh * std_val_med
+
+    # Second stage refinement
+    df_per_POI = df_per_POI[df_per_POI['POI_min_dist'] < upper_dist]
     df[df['Poi_Id'] == ind] = df_per_POI
 
     data_POI_dists = np.array(df_per_POI['POI_min_dist'])
@@ -323,7 +323,7 @@ print(tabulate(print_popularity, headers=['Cluster_Center',
                                           'Scaled_Popularity_Crowd',
                                           'Scaled_Popularity_Density']))
 
-# Save the above results in a CSV file
+# Save the above results in a CSV file and figures in png files
 csv_filename = './output/POI_Statistics.csv'
 headers = ['Geodetic_Cluster', 'Mean_Distance', 'Median_Distance', 'STD_Dist',
            'Mode_Dist', 'Cluster_Radius_Km',
@@ -332,7 +332,14 @@ print_data_df = pd.DataFrame(print_stats, columns=headers)
 if not os.path.exists('output'):
     os.makedirs('output')
 print_data_df.to_csv(csv_filename, index=False)
-
+plt.figure(1)
+plt.savefig('./output/Original_Histograms.png')
+plt.figure(2)
+plt.savefig('./output/Original_Clusters.png')
+plt.figure(3)
+plt.savefig('./output/Refined_Clusters.png')
+plt.figure(4)
+plt.savefig('./output/Refined_Histograms.png')
 
 if plot_flag:
     plt.show()
