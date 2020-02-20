@@ -1,0 +1,64 @@
+﻿             ##########################################################
+		 The hypothesis, assumptions, and implementations notes:
+				    Hilda Faraji, February 2019
+
+             ##########################################################
+
+-I have included some more outputs to help me get a better picture of the data presented.
+-I tried to do vectorization. But I assumed the number of POIs is limited and therefore process per POI is in a loop.
+
+I made two assumptions regarding the input data:
+Assumption 1)
+	1)Point of Interests: A commercial distribution centre for a specific brand business with three branches across Canada
+	2) Data samples which were referred as "requests", could be samples from online-interaction to single brand. (no walk-ins since I did not find any zero distance to the POIs and besides some hours of interaction were not during regular opening hours)
+	3) depending on the distance of the user each of the POI distribution centres gets activated.
+	4) With this approach I interpret the popularity of POI as the popularity of the brand in each regions of Canada in terms of number of requests.
+	
+Assumption 2) 
+	1)Point of Interests: Three competitive brands across Canada
+	2) Data samples: same assumption as Approach 1)
+	3)Popularity: The POI brand with highest density or number of clients is most popular.
+
+Notes regarding each question:
+
+Q1. Cleaning:
+-Since the only country in the data sample is Canada, I have removed the data  out of Canada span of latitudes and longitudes (42°N to 83°N ,-53°W to -141°W) .
+	
+-Two rows in POI were identical therefore I kept only one row.   
+-There were spaces in some header names, so in order to be consistent with the rest of headers, I removed the space characters in the csv files.(TimeSt in Data and Latitude in POI )
+
+Q2. Labelling:
+	- Distance computation: I initially used latitudes and longitudes Cartesian distance times a constant to get the distance in Km.
+  1. get the distance D= sqrt((La_2-La_1 )^2+(Lo_2-Lo_1 )^2)
+         2. then multiply the answer with 111.32 to get the final answer
+         1 degree at the equator is 111.32 Kms 
+ But later I used Haversine formula to estimate the distance between two geo points.
+- distance calculation based on “haversine” formula
+        -https://en.wikipedia.org/wiki/Haversine_formula
+        -As the Earth is nearly spherical, the haversine formula provides a good   approximation of the distance between two points of the Earth surface, with a less than 1% error on average
+-I assigned three more attributes to the data samples. One is the POI index, the distances in Km and also in degree (I used the third column for plotting only)
+    
+Q3. Analysis, statistics:
+	-For density I consider the kilometre (Km) unit as the measure of distance per POI cluster. However for visualization I used the distance in degree
+	-Perhaps besides mean, standard deviation, median and mode of the distribution could be informative as well. (I have added the results)
+	-In the first plot due to the existence of outliers in each cluster, there are significant overlaps between the circles.
+	-Couple of normality checks have been put in place even though given my assumption regarding the nature of the data a Gaussian distribution did not make sense
+	-The POI in Montreal seems to have the highest density.
+	-The POI in the far east seems to have much less data and a sparse cluster
+	-Since there is not that much data within the east cluster, the statistical measures may not truly reflect the patters within this cluster
+
+
+Q4a. Popularity assumptions:
+	
+- Treating of data much depends on how I interpret the data and what outliers mean in that case.
+-for this question I have only considered the upper limits as outliers
+-I probably needed to check of the distribution: uni-modal or bimodal 
+-Outlier removal: 
+-As the main way I have used  IQR: Inter-quartile Range for removing of outliers as a more general measure than mean+ 3 * std. However i tried Gaussian mean+std median+std_median as well. (They are present in the code
+-The aggressiveness of the removal depends on the parameter "iqr_thresh" that can be set in the configuration file.
+- The circle plots after outlier removal is also shown to compare with the initial plot as well as the histogram plots
+-Looking at the density and scatter of the data, it seems like the POI on the far-east in not very popular with the most sparse cluster out of the three clusters
+Perhaps we could so a semi unsupervised clustering on the given data (K-means clustering or DB-Scan or ...). 
+-The centre of the clusters could be considered as the POI centres.
+Number of clusters to consider perhaps would depend of the significance of each POI; If cost-saving is a important factor to be taken into consideration, and give the data is quite low density in far-east, the POI in that area could be removed?
+	-if cost is not the significant problem, and fast service is very important, perhaps we could have more than three clusters ?...
